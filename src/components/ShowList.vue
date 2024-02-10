@@ -60,6 +60,9 @@
       <v-pagination v-model="page" :length="totalPages" prev-icon="mdi-menu-left"
         next-icon="mdi-menu-right"></v-pagination>
     </div>
+    <v-snackbar v-model="showDeleteSuccess" color="success" timeout="3000">
+      Item deleted successfully!
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -101,12 +104,16 @@ const deleteItem = async (index) => {
     const item = formData.value[index];
     const docRef = doc(collection(db, 'forms'), item.id);
     await deleteDoc(docRef);
-    
-    formData.value.splice(index, 1);
+    // Create a new array without the deleted item
+    formData.value = formData.value.filter((_, i) => i !== index);
+    // Show the success message
+    showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
   }
 };
+
+const showDeleteSuccess = ref(false);
 
 const paginatedData = computed(() => {
   const startIndex = (page.value - 1) * itemsPerPage;
