@@ -104,9 +104,7 @@ const deleteItem = async (index) => {
     const item = formData.value[index];
     const docRef = doc(collection(db, 'forms'), item.id);
     await deleteDoc(docRef);
-    // Create a new array without the deleted item
     formData.value = formData.value.filter((_, i) => i !== index);
-    // Show the success message
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);

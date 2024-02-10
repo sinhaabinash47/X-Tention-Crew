@@ -21,7 +21,6 @@
                         </template>
                         <template v-slot:default="{ isActive }">
                             <v-card>
-                                <!-- <v-toolbar color="cadetblue" title="ADD USERS"></v-toolbar> -->
                                 <v-card-title class="text-h5">Add Users</v-card-title>
                                 <hr />
                                 <v-card-text>
