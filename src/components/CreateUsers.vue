@@ -47,7 +47,7 @@
             </v-row>
         </v-app-bar>
         <v-main>
-            <ShowList :formData="filteredData" />
+            <ShowList :formData="filteredData" @item-deleted="updateFormDataAfterDelete"/>
         </v-main>
     </v-layout>
 </template>
@@ -88,6 +88,15 @@ const searchText = ref('');
 
 const items = ref(['Cricket', 'Volleyball', 'Carrom Board', 'Hockey']);
 const formData = ref([]);
+const deleteItemIndex = ref(null);
+
+
+const updateFormDataAfterDelete = () => {
+    const formsCollection = collection(db, 'forms');
+    getDocs(formsCollection).then((querySnapshot) => {
+        formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    });
+};
 
 const submit = handleSubmit(async (values) => {
     try {
@@ -105,23 +114,30 @@ const submit = handleSubmit(async (values) => {
         const querySnapshot = await getDocs(formCollection);
         formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
+        if (deleteItemIndex.value !== null) {
+            formData.value.splice(deleteItemIndex.value, 1);
+            deleteItemIndex.value = null;
+        }
         isActive.value = false;
     } catch (error) {
         console.error('Error submitting form:', error);
     }
 });
-
-
-onMounted(async () => {
-    const formsCollection = collection(db, 'forms');
-    const querySnapshot = await getDocs(formsCollection);
-    formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-});
+const fetchFormData = () => {
+      const formsCollection = collection(db, 'forms');
+      getDocs(formsCollection)
+        .then((querySnapshot) => {
+          formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+        });
+    };
+    onMounted(fetchFormData);
 
 const filteredData = computed(() => {
     const term = searchText.value.toLowerCase();
-    return formData.value.filter(
-        (user) =>
+    return formData.value.filter((user) =>
             user.name.toLowerCase().includes(term) ||
             user.phone.toLowerCase().includes(term) ||
             user.email.toLowerCase().includes(term) ||
