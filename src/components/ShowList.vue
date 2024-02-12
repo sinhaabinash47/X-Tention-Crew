@@ -3,6 +3,7 @@
     <v-table>
       <thead>
         <tr>
+          <th class="text-left">Sr. No.</th>
           <th class="text-left">Name</th>
           <th class="text-left">Phone Number</th>
           <th class="text-left">Email</th>
@@ -12,6 +13,9 @@
       </thead>
       <tbody class="bg-green-100">
         <tr v-for="(item, index) in paginatedData" :key="item" class="hover:bg-blue-200 hover:shadow-lg">
+          <td>
+            <v-badge color="error" :content="index + 1" inline></v-badge>
+          </td>
           <td>
             <template v-if="item.editMode">
               <v-text-field v-model="item.name"></v-text-field>
@@ -47,7 +51,26 @@
           <td>
             <template v-if="!item.editMode">
               <v-icon icon="mdi-pencil" @click="toggleEditMode(index)"></v-icon>
-              <v-btn class="ma-2 text-red" icon="mdi-delete" @click="deleteItem(index)"></v-btn>
+              <v-dialog v-model="alertDialog" persistent width="auto">
+                <template v-slot:activator="{ props }">
+                  <v-btn class="ma-2 text-red" v-bind="props" icon="mdi-delete" @click="openDeleteDialog(index)"></v-btn>
+                </template>
+                <v-card>
+                  <v-card-title class="text-h5 text-red">
+                    Delete!
+                  </v-card-title>
+                  <v-card-text>Do You want to delete this user.</v-card-text>
+                  <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="green-darken-1" variant="text" @click="closeDeleteDialog">
+                      No
+                    </v-btn>
+                    <v-btn color="green-darken-1" variant="text" @click="confirmDelete">
+                      Yes
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-dialog>
             </template>
             <template v-else>
               <v-icon icon="mdi-content-save" @click="updateItem(index)"></v-icon>
@@ -56,6 +79,9 @@
         </tr>
       </tbody>
     </v-table>
+    <div v-if="loading" class="loader-overlay">
+      <div class="loader"></div>
+    </div>
     <div class="text-right">
       <v-pagination v-model="page" :length="totalPages" prev-icon="mdi-menu-left"
         next-icon="mdi-menu-right"></v-pagination>
@@ -68,15 +94,19 @@
 
 <script setup>
 import { ref, defineProps, toRefs, computed } from 'vue';
-import { doc, collection, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, collection, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import db from '../../firebase';
+import { getCurrentInstance } from 'vue';
+
+const instance = getCurrentInstance();
+const loading = ref(false);
 
 const props = defineProps(['formData']);
 const { formData } = toRefs(props);
 
 const itemsPerPage = 5;
 const page = ref(1);
-
+const alertDialog = ref(false);
 const hobbies = ['Cricket', 'Volleyball', 'Carrom Board', 'Hockey'];
 
 const toggleEditMode = (index) => {
@@ -101,16 +131,41 @@ const updateItem = async (index) => {
 
 const deleteItem = async (index) => {
   try {
+    loading.value = true;
+
+    const formCollection = collection(db, 'forms');
     const item = formData.value[index];
-    const docRef = doc(collection(db, 'forms'), item.id);
+    const docRef = doc(formCollection, item.id);
     await deleteDoc(docRef);
-    formData.value = formData.value.filter((_, i) => i !== index);
+    formData.value.splice(index, 1);
+
+    const querySnapshot = await getDocs(formCollection);
+    formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
+const openDeleteDialog = (index) => {
+  deleteItemIndex.value = index;
+  alertDialog.value = true;
+};
+
+const closeDeleteDialog = () => {
+  alertDialog.value = false;
+};
+
+const confirmDelete = async () => {
+  alertDialog.value = false;
+  await deleteItem(deleteItemIndex.value);
+  deleteItemIndex.value = null;
+  instance.emit('item-deleted');
+};
+
+const deleteItemIndex = ref(null);
 const showDeleteSuccess = ref(false);
 
 const paginatedData = computed(() => {
@@ -121,3 +176,38 @@ const paginatedData = computed(() => {
 
 const totalPages = computed(() => Math.ceil(formData.value.length / itemsPerPage));
 </script>
+
+
+<style>
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
