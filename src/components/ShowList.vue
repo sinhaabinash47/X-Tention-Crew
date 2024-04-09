@@ -8,7 +8,8 @@
           <th class="text-left">Phone Number</th>
           <th class="text-left">Email</th>
           <th class="text-left">Hobbies</th>
-          <th class="text-left">Action - {{ paginatedData && Array.isArray(paginatedData) && paginatedData.length && paginatedData[0].editMode }}</th>
+          <th class="text-left">Action - {{ paginatedData && Array.isArray(paginatedData) && paginatedData.length &&
+    paginatedData[0].editMode }}</th>
         </tr>
       </thead>
       <tbody class="bg-green-100">
@@ -154,9 +155,9 @@ const deleteItem = async (index) => {
     const querySnapshot = await getDocs(formCollection);
     formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     showUndo.value = true;
-     setTimeout(() => {
-        showUndo.value = false;
-      }, 4000);
+    setTimeout(() => {
+      showUndo.value = false;
+    }, 4000);
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
@@ -182,7 +183,8 @@ const confirmDelete = async () => {
 };
 
 const undoDelete = async () => {
-  const lastDeletedItem = deletedItems.value.splice(-1, 1)[0];
+  const lastDeletedItem = deletedItems.value[deletedItems.value.length - 1];
+  deletedItems.value.length -= 1;
   console.log({ di: lastDeletedItem });
   if (lastDeletedItem) {
     try {
