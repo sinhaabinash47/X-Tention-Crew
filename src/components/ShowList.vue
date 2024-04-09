@@ -96,13 +96,6 @@
       <v-btn @click="undoDelete" size="x-small" color="blue-darken-3">Item Undo</v-btn>
     </div>
   </div>
-
-  <!-- <div v-if="showUndo" class="snackbar-container">
-    <div class="text-align-center">
-      <v-btn @click="undoDelete" density="compact" color="blue-darken-3">Item Undo</v-btn>
-    </div>
-  </div> -->
-
 </template>
 
 <script setup>
