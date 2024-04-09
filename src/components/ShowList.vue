@@ -93,9 +93,15 @@
   </v-card>
   <div v-if="showUndo" class="snackbar-container">
     <div class="text-align-center">
-      <v-btn @click="undoDelete" density="compact" color="blue-darken-3">Item Undo</v-btn>
+      <v-btn @click="undoDelete" size="x-small" color="blue-darken-3">Item Undo</v-btn>
     </div>
   </div>
+
+  <!-- <div v-if="showUndo" class="snackbar-container">
+    <div class="text-align-center">
+      <v-btn @click="undoDelete" density="compact" color="blue-darken-3">Item Undo</v-btn>
+    </div>
+  </div> -->
 
 </template>
 
@@ -133,6 +139,7 @@ const updateItem = async (index) => {
       email: item.email,
       selectedOption: item.selectedOption,
     });
+    // toggleEditMode(index, false);
   } catch (error) {
     console.error('Error updating item:', error);
   } finally {
@@ -154,6 +161,9 @@ const deleteItem = async (index) => {
     const querySnapshot = await getDocs(formCollection);
     formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     showUndo.value = true;
+    setTimeout(() => {
+        showUndo.value = false;
+      }, 2000); 
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
@@ -186,11 +196,13 @@ const undoDelete = async () => {
       await setDoc(docRef, lastDeletedItem);
       formData.value = [...formData.value, lastDeletedItem];
       showUndo.value = false;
+      
     } catch (error) {
       console.error('Error:', error);
     }
   }
 };
+
 
 const deleteItemIndex = ref(null);
 const showDeleteSuccess = ref(false);
