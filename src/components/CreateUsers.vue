@@ -126,14 +126,13 @@ const submit = handleSubmit(async (values) => {
     }
 });
 const fetchFormData = () => {
-    //   getDocs(formsCollection)
-    //     .then((querySnapshot) => {
-    //       formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    //     })
-    //     .catch((error) => {
-    //       console.error('Error fetching data:', error);
-    //     });
     const formsCollection = collection(db, 'forms');
+    //   getDocs(formsCollection).then((querySnapshot) => {
+    //       formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    // })
+    // .catch((error) => {
+    //   console.error('Error fetching data:', error);
+    // });
     const unsubscribe = onSnapshot(formsCollection, (querySnapshot) => {
         formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     });

@@ -8,7 +8,7 @@
           <th class="text-left">Phone Number</th>
           <th class="text-left">Email</th>
           <th class="text-left">Hobbies</th>
-          <th class="text-left">Action</th>
+          <th class="text-left">Action - {{ paginatedData && Array.isArray(paginatedData) && paginatedData.length && paginatedData[0].editMode }}</th>
         </tr>
       </thead>
       <tbody class="bg-green-100">
@@ -50,10 +50,11 @@
           </td>
           <td>
             <template v-if="!item.editMode">
-              <v-icon icon="mdi-pencil" @click="toggleEditMode(index)"></v-icon>
+              <v-icon icon="mdi-pencil" @click="toggleEditMode(index, true)"></v-icon>
               <v-dialog v-model="alertDialog" persistent width="auto">
                 <template v-slot:activator="{ props }">
-                  <v-btn class="ma-2 text-red" v-bind="props" icon="mdi-delete" @click="openDeleteDialog(index)"></v-btn>
+                  <v-btn class="ma-2 text-red" v-bind="props" icon="mdi-delete"
+                    @click="openDeleteDialog(index)"></v-btn>
                 </template>
                 <v-card>
                   <v-card-title class="text-h5 text-red">
@@ -90,11 +91,17 @@
       Item deleted successfully!
     </v-snackbar>
   </v-card>
+  <div v-if="showUndo" class="snackbar-container">
+    <div class="text-align-center">
+      <v-btn @click="undoDelete" density="compact" color="blue-darken-3">Item Undo</v-btn>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
 import { ref, defineProps, toRefs, computed } from 'vue';
-import { doc, collection, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { doc, collection, updateDoc, deleteDoc, getDocs, setDoc } from 'firebase/firestore';
 import db from '../../firebase';
 import { getCurrentInstance } from 'vue';
 
@@ -109,8 +116,11 @@ const page = ref(1);
 const alertDialog = ref(false);
 const hobbies = ['Cricket', 'Volleyball', 'Carrom Board', 'Hockey'];
 
-const toggleEditMode = (index) => {
-  formData.value[index].editMode = !formData.value[index].editMode;
+const deletedItems = ref([]);
+const showUndo = ref(false);
+
+const toggleEditMode = (index, value) => {
+  formData.value[index].editMode = value;
 };
 
 const updateItem = async (index) => {
@@ -123,9 +133,10 @@ const updateItem = async (index) => {
       email: item.email,
       selectedOption: item.selectedOption,
     });
-    toggleEditMode(index);
   } catch (error) {
     console.error('Error updating item:', error);
+  } finally {
+    toggleEditMode(index, false);
   }
 };
 
@@ -138,9 +149,11 @@ const deleteItem = async (index) => {
     const docRef = doc(formCollection, item.id);
     await deleteDoc(docRef);
     formData.value.splice(index, 1);
+    deletedItems.value.push(item);
 
     const querySnapshot = await getDocs(formCollection);
     formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    showUndo.value = true;
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
@@ -165,6 +178,20 @@ const confirmDelete = async () => {
   instance.emit('item-deleted');
 };
 
+const undoDelete = async () => {
+  const lastDeletedItem = deletedItems.value.pop();
+  if (lastDeletedItem) {
+    try {
+      const docRef = doc(collection(db, 'forms'), lastDeletedItem.id);
+      await setDoc(docRef, lastDeletedItem);
+      formData.value = [...formData.value, lastDeletedItem];
+      showUndo.value = false;
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+};
+
 const deleteItemIndex = ref(null);
 const showDeleteSuccess = ref(false);
 
@@ -179,6 +206,12 @@ const totalPages = computed(() => Math.ceil(formData.value.length / itemsPerPage
 
 
 <style>
+.text-align-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .loader-overlay {
   position: fixed;
   top: 0;
