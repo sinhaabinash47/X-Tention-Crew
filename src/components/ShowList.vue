@@ -182,7 +182,8 @@ const confirmDelete = async () => {
 };
 
 const undoDelete = async () => {
-  const lastDeletedItem = deletedItems.value.pop();
+  const lastDeletedItem = deletedItems.value.splice(-1, 1)[0];
+  console.log({ di: lastDeletedItem });
   if (lastDeletedItem) {
     try {
       const docRef = doc(collection(db, 'forms'), lastDeletedItem.id);
