@@ -161,9 +161,9 @@ const deleteItem = async (index) => {
     const querySnapshot = await getDocs(formCollection);
     formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     showUndo.value = true;
-    setTimeout(() => {
+     setTimeout(() => {
         showUndo.value = false;
-      }, 4000); 
+      }, 4000);
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
@@ -196,13 +196,11 @@ const undoDelete = async () => {
       await setDoc(docRef, lastDeletedItem);
       formData.value = [...formData.value, lastDeletedItem];
       showUndo.value = false;
-      
     } catch (error) {
       console.error('Error:', error);
     }
   }
 };
-
 
 const deleteItemIndex = ref(null);
 const showDeleteSuccess = ref(false);
