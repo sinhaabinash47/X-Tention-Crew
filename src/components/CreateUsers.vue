@@ -24,13 +24,15 @@
                                 <v-card-title class="text-h5">Add Users</v-card-title>
                                 <hr />
                                 <v-card-text>
-                                    <form @submit.prevent="submit" class="max-w-md mx-auto p-8 bg-white shadow-md rounded">
-                                        <v-text-field v-model="name.value.value" :error-messages="name.errorMessage.value"
-                                            label="Name"></v-text-field>
-                                        <v-text-field v-model="phone.value.value" :error-messages="phone.errorMessage.value"
+                                    <form @submit.prevent="submit"
+                                        class="max-w-md mx-auto p-8 bg-white shadow-md rounded">
+                                        <v-text-field v-model="name.value.value"
+                                            :error-messages="name.errorMessage.value" label="Name"></v-text-field>
+                                        <v-text-field v-model="phone.value.value"
+                                            :error-messages="phone.errorMessage.value"
                                             label="Phone Number"></v-text-field>
-                                        <v-text-field v-model="email.value.value" :error-messages="email.errorMessage.value"
-                                            label="E-mail"></v-text-field>
+                                        <v-text-field v-model="email.value.value"
+                                            :error-messages="email.errorMessage.value" label="E-mail"></v-text-field>
                                         <v-select v-model="select.value.value" :items="items"
                                             :error-messages="select.errorMessage.value" label="Select">
                                         </v-select>
@@ -47,15 +49,15 @@
             </v-row>
         </v-app-bar>
         <v-main>
-            <ShowList :formData="filteredData" @item-deleted="updateFormDataAfterDelete"/>
+            <ShowList :formData="filteredData" @item-deleted="updateFormDataAfterDelete" />
         </v-main>
     </v-layout>
 </template>
-  
+
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useField, useForm } from 'vee-validate'
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import db from '../../firebase';
 import ShowList from './ShowList.vue';
 
@@ -124,26 +126,31 @@ const submit = handleSubmit(async (values) => {
     }
 });
 const fetchFormData = () => {
-      const formsCollection = collection(db, 'forms');
-      getDocs(formsCollection)
-        .then((querySnapshot) => {
-          formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        })
-        .catch((error) => {
-          console.error('Error fetching data:', error);
-        });
-    };
-    onMounted(fetchFormData);
+    //   getDocs(formsCollection)
+    //     .then((querySnapshot) => {
+    //       formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    //     })
+    //     .catch((error) => {
+    //       console.error('Error fetching data:', error);
+    //     });
+    const formsCollection = collection(db, 'forms');
+    const unsubscribe = onSnapshot(formsCollection, (querySnapshot) => {
+        formData.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    });
+    return unsubscribe;
+};
+onMounted(fetchFormData);
+onUnmounted(() => {
+    unsubscribe();
+});
 
 const filteredData = computed(() => {
     const term = searchText.value.toLowerCase();
     return formData.value.filter((user) =>
-            user.name.toLowerCase().includes(term) ||
-            user.phone.toLowerCase().includes(term) ||
-            user.email.toLowerCase().includes(term) ||
-            user.selectedOption.toLowerCase().includes(term)
+        user.name.toLowerCase().includes(term) ||
+        user.phone.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term) ||
+        user.selectedOption.toLowerCase().includes(term)
     );
 });
 </script>
-
-  
