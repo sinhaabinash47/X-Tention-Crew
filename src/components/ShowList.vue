@@ -163,7 +163,7 @@ const deleteItem = async (index) => {
     showUndo.value = true;
     setTimeout(() => {
         showUndo.value = false;
-      }, 2000); 
+      }, 4000); 
     showDeleteSuccess.value = true;
   } catch (error) {
     console.error('Error deleting item:', error);
